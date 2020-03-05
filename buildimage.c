@@ -19,6 +19,9 @@
 
 /* Reads in an executable file in ELF format*/
 Elf32_Phdr * read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr){
+    *ehdr = (struct Elf32_Ehdr*) filename; //em teoria isso tem o cabeçalho elf
+    fseek(*execfile, (*ehdr)->e_ehsize, SEEK_SET); //seta o ponteiro de arquivo para o fim do cabeçalho ELF
+    //fread(*execfile, );
  
   return NULL;
 }
@@ -70,8 +73,8 @@ int main(int argc, char **argv){
   Elf32_Ehdr *boot_header = malloc(sizeof(Elf32_Ehdr));//bootblock ELF header
   Elf32_Ehdr *kernel_header = malloc(sizeof(Elf32_Ehdr));//kernel ELF header
 
-  Elf32_Phdr *boot_program_header; //bootblock ELF program header
-  Elf32_Phdr *kernel_program_header; //kernel ELF program header
+  Elf32_Phdr *boot_program_header = malloc(sizeof(Elf32_Phdr)); //bootblock ELF program header
+  Elf32_Phdr *kernel_program_header = malloc(sizeof(Elf32_Phdr)); //kernel ELF program header
 
   /* build image file */
 
