@@ -17,36 +17,47 @@
 #define BOOTLOADER_SIG_OFFSET 0x1fe /* offset for boot loader signature */
 // more defines...
 
+int get_file_size(FILE* f){
+
+  fseek(f, 0L, SEEK_END);
+  return ftell(f);
+
+}
+
 /* Reads in an executable file in ELF format*/
 Elf32_Phdr * read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr){
-    *ehdr = (struct Elf32_Ehdr*) filename; //em teoria isso tem o cabeçalho elf
-    fseek(*execfile, (*ehdr)->e_ehsize, SEEK_SET); //seta o ponteiro de arquivo para o fim do cabeçalho ELF
-    //fread(*execfile, );
- 
-  return NULL;
+
+    int file_size = get_file_size(execfile); //retorno o tamanho do arquivo elf (BYTES)
+    int elf_header_size = (*ehdr)->e_ehsize; //pego o tamanho do cabeçalho elf (BYTES)
+
+    fseek(*execfile, elf_header_size, SEEK_SET); //seta o ponteiro de arquivo para o fim do cabeçalho ELF/começo do cabeçalho de programa
+    char* program_section = malloc(sizeof(file_size-elf_header_size)); //alocando memória pra sessão de programa do .elf
+    fread(program_section, 1, file_size-elf_header_size,*execfile);
+    return (Elf32_Phdr*) program_section;
+
 }
 
 /* Writes the bootblock to the image file */
 void write_bootblock(FILE **imagefile,FILE *bootfile,Elf32_Ehdr *boot_header, Elf32_Phdr *boot_phdr){
- 
+
 
 }
 
 /* Writes the kernel to the image file */
 void write_kernel(FILE **imagefile,FILE *kernelfile,Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr){
 
- 
+
 }
 
 /* Counts the number of sectors in the kernel */
 int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr){
-   
+
     return 0;
 }
 
 /* Records the number of sectors in the kernel */
 void record_kernel_sectors(FILE **imagefile,Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr, int num_sec){
-    
+
 }
 
 
@@ -55,12 +66,12 @@ void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec){
 
   /* print number of disk sectors used by the image */
 
-  
+
   /*bootblock segment info */
- 
+
 
   /* print kernel segment info */
-  
+
 
   /* print kernel size in sectors */
 }
@@ -78,9 +89,9 @@ int main(int argc, char **argv){
 
   /* build image file */
 
-  /* read executable bootblock file */  
+  /* read executable bootblock file */
 
-  /* write bootblock */  
+  /* write bootblock */
 
   /* read executable kernel file */
 
@@ -92,7 +103,7 @@ int main(int argc, char **argv){
   if(!strncmp(argv[1],"--extended",11)){
 	/* print info */
   }
-  
+
   return 0;
 } // ends main()
 
