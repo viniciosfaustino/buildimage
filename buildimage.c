@@ -46,19 +46,16 @@ void print_phdr(Elf32_Phdr phdr)
 }
 
 /* Reads in an executable file in ELF format*/
-Elf32_Phdr * read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr){
-  *execfile = fopen((const char*)filename, "rb");
+Elf32_Phdr * read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr){  
   if (*execfile){
     size_t step = fread(*ehdr, 1, sizeof(**ehdr), *execfile);
     print_ehdr(**ehdr);
     if ((*ehdr)->e_phoff != 0){
       Elf32_Phdr* phdr = malloc(sizeof(Elf32_Phdr));
       step = fread(phdr, 1, sizeof(*phdr), *execfile);
-      print_phdr(*phdr);
-      fclose(*execfile);
+      print_phdr(*phdr);      
       return phdr;
-    }
-    fclose(*execfile);
+    }    
   }
   return NULL;
 }
@@ -66,11 +63,11 @@ Elf32_Phdr * read_exec_file(FILE **execfile, char *filename, Elf32_Ehdr **ehdr){
 /* Writes the bootblock to the image file */
 void write_bootblock(FILE **imagefile,FILE *bootfile,Elf32_Ehdr *boot_header, Elf32_Phdr *boot_phdr){
 
-  void * buffer =  malloc(boot_phdr->p_memsz);
-  size_t step = fread(buffer, 1, boot_phdr->p_memsz, bootfile);
-  fwrite(buffer, 1, boot_phdr->p_memsz, *imagefile);
+  void * buffer =  malloc(boot_phdr->p_filesz);
+  size_t step = fread(buffer, 1, boot_phdr->p_filesz, bootfile);
+  fwrite(buffer, 1, boot_phdr->p_filesz, *imagefile);
 
-  int mod = boot_phdr->p_memsz % 512;
+  int mod = boot_phdr->p_filesz % 512;
   if(mod > 0)
   {
     void* padding = calloc(512 - mod, 1);
@@ -80,11 +77,11 @@ void write_bootblock(FILE **imagefile,FILE *bootfile,Elf32_Ehdr *boot_header, El
 
 /* Writes the kernel to the image file */
 void write_kernel(FILE **imagefile,FILE *kernelfile,Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr){
-  void * buffer =  malloc(kernel_phdr->p_memsz);
-  size_t step = fread(buffer, 1, kernel_phdr->p_memsz, kernelfile);
-  fwrite(buffer, 1, kernel_phdr->p_memsz, *imagefile);
+  void * buffer =  malloc(kernel_phdr->p_filesz);
+  size_t step = fread(buffer, 1, kernel_phdr->p_filesz, kernelfile);
+  fwrite(buffer, 1, kernel_phdr->p_filesz, *imagefile);
 
-  int mod = kernel_phdr->p_memsz % 512;
+  int mod = kernel_phdr->p_filesz % 512;
   if(mod > 0)
   {
     void* padding = calloc(512 - mod, 1);
@@ -94,14 +91,14 @@ void write_kernel(FILE **imagefile,FILE *kernelfile,Elf32_Ehdr *kernel_header, E
 
 /* Counts the number of sectors in the kernel */
 int count_kernel_sectors(Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr){
-    int sectors = ceil(kernel_phdr->p_filesz/512);
+    int sectors = ceil(kernel_phdr->p_filesz/512.0);
     return sectors;
 }
 
 /* Records the number of sectors in the kernel */
 void record_kernel_sectors(FILE **imagefile,Elf32_Ehdr *kernel_header, Elf32_Phdr *kernel_phdr, int num_sec){
   fseek(*imagefile, 2, SEEK_SET);
-  fwrite(&num_sec, 1, sizeof(int), *imagefile);
+  fwrite(&num_sec, 1, sizeof(int), *imagefile);  
 }
 
 
@@ -127,17 +124,19 @@ int main(int argc, char **argv){
   FILE *kernelfile, *bootfile,*imagefile;  //file pointers for bootblock,kernel and image
   Elf32_Ehdr *boot_header = malloc(sizeof(Elf32_Ehdr));//bootblock ELF header
   Elf32_Ehdr *kernel_header = malloc(sizeof(Elf32_Ehdr));//kernel ELF header
-  Elf32_Phdr *boot_program_header; //bootblock ELF program header
-  Elf32_Phdr *kernel_program_header; //kernel ELF program header
+  Elf32_Phdr *boot_program_header = malloc(sizeof(Elf32_Phdr));; //bootblock ELF program header
+  Elf32_Phdr *kernel_program_header = malloc(sizeof(Elf32_Phdr));; //kernel ELF program header
 
   /* build image file */
   imagefile =  fopen(IMAGE_FILE, "w");
+  bootfile =  fopen(argv[1], "rb");
+  kernelfile =  fopen(argv[2], "rb");
   
   /* read executable bootblock file */
   boot_program_header = read_exec_file(&bootfile, argv[1], &boot_header);  
     
   /* write bootblock */
-  write_bootblock(&imagefile, bootfile, boot_header, boot_program_header);
+  // write_bootblock(&imagefile, bootfile, boot_header, boot_program_header);
 
   /* read executable kernel file */
   kernel_program_header = read_exec_file(&kernelfile, argv[2], &kernel_header);
@@ -154,6 +153,8 @@ int main(int argc, char **argv){
   if(!strncmp(argv[1],"--extended",11)){
 	/* print info */
   }
+  fclose(bootfile);
   fclose(imagefile);
+  fclose(kernelfile);
   return 0;
 } // ends main()
