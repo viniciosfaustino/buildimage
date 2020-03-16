@@ -1,4 +1,4 @@
-/* Author(s): <Your name(s) here>
+/* Author(s): Vinicios Faustino, Davi Santo>
  * Creates operating system image suitable for placement on a boot disk
 */
 /* TODO: Comment on the status of your submission. Largely unimplemented */
@@ -108,7 +108,7 @@ void record_kernel_sectors(FILE **imagefile,Elf32_Ehdr *kernel_header, Elf32_Phd
 void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec, const char * bname, const char * kname){
 
   /* print number of disk sectors used by the image */
-  printf("kernel size: %d sectors\n", num_sec);
+  printf("image size: %d sectors\n", num_sec+1);
 
   /*bootblock segment info */
   int pad = bph->p_filesz + (512 - bph->p_filesz%512);
@@ -129,6 +129,7 @@ void extended_opt(Elf32_Phdr *bph, int k_phnum, Elf32_Phdr *kph, int num_sec, co
   printf("\t\tpadding up to 0x%04x\n", pad);
 
   /* print kernel size in sectors */
+  printf("kernel size: %d sectors\n", num_sec);
 }
 // more helper functions...
 
@@ -171,7 +172,7 @@ int main(int argc, char **argv){
   
   /* check for  --extended option */
   if(!strncmp(argv[1],"--extended",11)){
-	/* print info */    
+	/* print info */
     extended_opt(boot_program_header, kernel_header->e_phnum, kernel_program_header, sectors, argv[bootIndex], argv[kernelIndex]);
   }
   fclose(bootfile);
